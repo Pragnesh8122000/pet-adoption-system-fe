@@ -11,26 +11,31 @@ import {
   InputAdornment,
   IconButton,
   Alert,
+  Grid,
 } from "@mui/material";
 import { Link, useNavigate } from "react-router-dom";
-import { login as loginUser } from "../api/auth.api";
-import { useAuth } from "../context/AuthContext";
 import {
   Email,
   Lock,
   Visibility,
   VisibilityOff,
-  Login as LoginIcon,
+  Person,
+  PersonAdd,
   Pets,
+  Phone,
 } from "@mui/icons-material";
+import { register } from "../api/auth.api";
+import { toast } from "react-toastify";
 
-const Login = () => {
+const Signup = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
 
   const [formData, setFormData] = useState({
+    name: "",
     email: "",
+    phoneNumber: "",
     password: "",
+    confirmPassword: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,22 +51,23 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (formData.password !== formData.confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
     try {
-      const data = await loginUser(formData);
-      if (data?.data?.token) {
-        login(data.data.token, data.data.user);
-        navigate("/dashboard");
-      } else {
-        console.log(data);
-        setError("Invalid response from server. Please try again.");
-      }
+      const { confirmPassword, ...signupData } = formData;
+      await register(signupData);
+      toast.success("Account created successfully! Please login.");
+      navigate("/login");
     } catch (err) {
       setError(
-        err?.response?.data?.message ||
-          "Login failed. Please check your credentials."
+        err?.response?.data?.message || "Signup failed. Please try again."
       );
     } finally {
       setLoading(false);
@@ -75,6 +81,7 @@ const Login = () => {
         minHeight: "100vh",
         display: "flex",
         alignItems: "center",
+        py: 4,
       }}
     >
       <Container maxWidth="sm">
@@ -108,10 +115,10 @@ const Login = () => {
                 color="primary"
                 sx={{ letterSpacing: "-0.5px" }}
               >
-                Pet Adoption
+                Join Us
               </Typography>
               <Typography variant="body1" color="text.secondary">
-                Welcome back! Ready to find a new friend?
+                Start your journey to find a furry companion.
               </Typography>
             </Box>
 
@@ -122,7 +129,57 @@ const Login = () => {
             )}
 
             <Box component="form" onSubmit={handleSubmit}>
-              <Stack spacing={3}>
+              <Stack spacing={2.5}>
+                {/* <Grid container spacing={2}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="First Name"
+                      name="firstName"
+                      required
+                      fullWidth
+                      value={formData.firstName}
+                      onChange={handleChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <Person color="action" />
+                          </InputAdornment>
+                        ),
+                      }}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      label="Last Name"
+                      name="lastName"
+                      required
+                      fullWidth
+                      value={formData.lastName}
+                      onChange={handleChange}
+                      sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                    />
+                  </Grid>
+                </Grid> */}
+
+                <TextField
+                  label="Name"
+                  name="name"
+                  type="name"
+                  required
+                  fullWidth
+                  value={formData.name}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                />
+
                 <TextField
                   label="Email Address"
                   name="email"
@@ -140,6 +197,26 @@ const Login = () => {
                   }}
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
+
+                {/* Phone Number */}
+                <TextField
+                  label="Phone Number"
+                  name="phoneNumber"
+                  type="number"
+                  required
+                  fullWidth
+                  value={formData.phoneNumber}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Phone color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                />
+
                 <TextField
                   label="Password"
                   name="password"
@@ -169,13 +246,31 @@ const Login = () => {
                   sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
 
+                <TextField
+                  label="Confirm Password"
+                  name="confirmPassword"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  fullWidth
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
+                />
+
                 <Button
                   type="submit"
                   variant="contained"
                   size="large"
                   fullWidth
                   disabled={loading}
-                  startIcon={<LoginIcon />}
+                  startIcon={<PersonAdd />}
                   sx={{
                     py: 1.5,
                     fontSize: "1.1rem",
@@ -183,24 +278,25 @@ const Login = () => {
                     textTransform: "none",
                     fontWeight: "bold",
                     boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                    mt: 1,
                   }}
                 >
-                  {loading ? "Logging in..." : "Login"}
+                  {loading ? "Creating Account..." : "Sign Up"}
                 </Button>
               </Stack>
 
-              <Box mt={4} textAlign="center">
+              <Box mt={3} textAlign="center">
                 <Typography variant="body2" color="text.secondary">
-                  New here?{" "}
+                  Already have an account?{" "}
                   <Link
-                    to="/signup"
+                    to="/login"
                     style={{
                       textDecoration: "none",
                       fontWeight: "bold",
                       color: "#1976d2",
                     }}
                   >
-                    Create an Account
+                    Login here
                   </Link>
                 </Typography>
               </Box>
@@ -212,4 +308,4 @@ const Login = () => {
   );
 };
 
-export default Login;
+export default Signup;
